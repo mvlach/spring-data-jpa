@@ -203,7 +203,7 @@ public abstract class JpaQueryExecution {
 		@Override
 		protected Object doExecute(AbstractJpaQuery query, Object[] values) {
 
-			return query.createQuery(values).getSingleResult();
+			return query.createQuery(values).setMaxResults(1).getSingleResult();
 		}
 	}
 
