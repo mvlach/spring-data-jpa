@@ -74,4 +74,10 @@ public @interface Query {
 	 * @return
 	 */
 	String countName() default "";
+
+
+	/**
+	 * It sets entityManager query to setMaxLimix(1)
+	 */
+	boolean limitToOneResult = false;
 }

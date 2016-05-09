@@ -113,8 +113,16 @@ public abstract class AbstractJpaQuery implements RepositoryQuery {
 		} else if (method.isPageQuery()) {
 			return new PagedExecution(method.getParameters());
 		} else if (method.isModifyingQuery()) {
-			return method.getClearAutomatically() ? new ModifyingExecution(method, em) : new ModifyingExecution(method, null);
+			Boolean clearAutomatically =  method.getClearAutomatically();
+			Boolean flushBeforeClear = method.getFlushBeforeClear();
+
+			if (clearAutomatically) {
+				return new ModifyingExecution(method, em, clearAutomatically, flushBeforeClear);
+			} else {
+				return new ModifyingExecution(method, null);
+			}
 		} else {
+			boolean limitToOneResult = method.getLimitToOneResult();
 			return new SingleEntityExecution();
 		}
 	}

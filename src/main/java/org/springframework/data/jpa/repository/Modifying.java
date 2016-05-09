@@ -37,4 +37,12 @@ public @interface Modifying {
 	 * @return
 	 */
 	boolean clearAutomatically() default false;
+
+	/**
+	 * Defines whether we flush entityManager before clearing persistence context. When clearAutomatically is set
+	 * to false, nothing happen.
+	 *
+	 * @return
+	 */
+	boolean flushBeforeClear() default true;
 }

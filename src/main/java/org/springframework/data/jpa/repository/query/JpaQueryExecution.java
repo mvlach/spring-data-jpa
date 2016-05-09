@@ -43,7 +43,7 @@ import org.springframework.util.Assert;
  * Set of classes to contain query execution strategies. Depending (mostly) on the return type of a
  * {@link org.springframework.data.repository.query.QueryMethod} a {@link AbstractStringBasedJpaQuery} can be executed
  * in various flavors.
- * 
+ *
  * @author Oliver Gierke
  * @author Thomas Darimont
  */
@@ -62,8 +62,8 @@ public abstract class JpaQueryExecution {
 
 	/**
 	 * Executes the given {@link AbstractStringBasedJpaQuery} with the given {@link ParameterBinder}.
-	 * 
-	 * @param query must not be {@literal null}.
+	 *
+	 * @param query  must not be {@literal null}.
 	 * @param binder must not be {@literal null}.
 	 * @return
 	 */
@@ -92,12 +92,12 @@ public abstract class JpaQueryExecution {
 		}
 
 		return CONVERSION_SERVICE.canConvert(result.getClass(), requiredType)
-				? CONVERSION_SERVICE.convert(result, requiredType) : result;
+			? CONVERSION_SERVICE.convert(result, requiredType) : result;
 	}
 
 	/**
 	 * Method to implement {@link AbstractStringBasedJpaQuery} executions by single enum values.
-	 * 
+	 *
 	 * @param query
 	 * @param binder
 	 * @return
@@ -117,7 +117,7 @@ public abstract class JpaQueryExecution {
 
 	/**
 	 * Executes the query to return a {@link Slice} of entities.
-	 * 
+	 *
 	 * @author Oliver Gierke
 	 * @since 1.6
 	 */
@@ -127,7 +127,7 @@ public abstract class JpaQueryExecution {
 
 		/**
 		 * Creates a new {@link SlicedExecution} using the given {@link Parameters}.
-		 * 
+		 *
 		 * @param parameters must not be {@literal null}.
 		 */
 		public SlicedExecution(Parameters<?, ?> parameters) {
@@ -189,7 +189,7 @@ public abstract class JpaQueryExecution {
 			Query query = repositoryQuery.createQuery(values);
 
 			List<Object> content = pageable == null || total > pageable.getOffset() ? query.getResultList()
-					: Collections.emptyList();
+				: Collections.emptyList();
 
 			return new PageImpl<Object>(content, pageable, total);
 		}
@@ -203,7 +203,7 @@ public abstract class JpaQueryExecution {
 		@Override
 		protected Object doExecute(AbstractJpaQuery query, Object[] values) {
 
-			return query.createQuery(values).setMaxResults(1).getSingleResult();
+			return query.createQuery(values).getSingleResult();
 		}
 	}
 
@@ -213,11 +213,33 @@ public abstract class JpaQueryExecution {
 	static class ModifyingExecution extends JpaQueryExecution {
 
 		private final EntityManager em;
+		private final Boolean flushBeforeClear;
+		private final Boolean clearAutomatically;
 
 		/**
 		 * Creates an execution that automatically clears the given {@link EntityManager} after execution if the given
 		 * {@link EntityManager} is not {@literal null}.
-		 * 
+		 *
+		 * @param em
+		 */
+		public ModifyingExecution(JpaQueryMethod method, EntityManager em, Boolean clearAutomatically, boolean flushBeforeClear) {
+
+			Class<?> returnType = method.getReturnType();
+
+			boolean isVoid = void.class.equals(returnType) || Void.class.equals(returnType);
+			boolean isInt = int.class.equals(returnType) || Integer.class.equals(returnType);
+
+			Assert.isTrue(isInt || isVoid, "Modifying queries can only use void or int/Integer as return type!");
+
+			this.em = em;
+			this.flushBeforeClear = flushBeforeClear;
+			this.clearAutomatically = clearAutomatically;
+		}
+
+		/**
+		 * Creates an execution that automatically clears the given {@link EntityManager} after execution if the given
+		 * {@link EntityManager} is not {@literal null}.
+		 *
 		 * @param em
 		 */
 		public ModifyingExecution(JpaQueryMethod method, EntityManager em) {
@@ -230,6 +252,8 @@ public abstract class JpaQueryExecution {
 			Assert.isTrue(isInt || isVoid, "Modifying queries can only use void or int/Integer as return type!");
 
 			this.em = em;
+			this.flushBeforeClear = false;
+			this.clearAutomatically = em != null ? true : false;
 		}
 
 		@Override
@@ -237,7 +261,11 @@ public abstract class JpaQueryExecution {
 
 			int result = query.createQuery(values).executeUpdate();
 
-			if (em != null) {
+			if (clearAutomatically) {
+				if (flushBeforeClear) {
+					em.flush();
+				}
+
 				em.clear();
 			}
 
@@ -247,7 +275,7 @@ public abstract class JpaQueryExecution {
 
 	/**
 	 * {@link Execution} removing entities matching the query.
-	 * 
+	 *
 	 * @author Thomas Darimont
 	 * @author Oliver Gierke
 	 * @since 1.6
@@ -280,7 +308,7 @@ public abstract class JpaQueryExecution {
 
 	/**
 	 * {@link Execution} executing a stored procedure.
-	 * 
+	 *
 	 * @author Thomas Darimont
 	 * @since 1.6
 	 */
@@ -305,7 +333,7 @@ public abstract class JpaQueryExecution {
 
 	/**
 	 * {@link Execution} executing a Java 8 Stream.
-	 * 
+	 *
 	 * @author Thomas Darimont
 	 * @since 1.8
 	 */
